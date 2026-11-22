@@ -1,0 +1,53 @@
+---
+title: "Analyse de survie des dirigeants politiques"
+author: "Arsène MBABEH"
+date: today
+lang: fr
+format:
+  pdf:
+    toc: true
+    number-sections: true
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+### chargement des données
+
+```{r}
+#| label: setup
+
+install.packages("survminer")
+library(tidyverse)
+library(survival)
+library(survminer)
+
+# Chargement des données (virgule décimale)
+df <- read.csv("h_data.csv", sep = ",")
+```
+
+### Nettoyage des données
+
+```{r}
+#| label: nettoyage
+
+# On regarde le résumé de la durée avant nettoyage
+summary(df$Duree_Mandat_Annees)
+sum(is.na(df$Duree_Mandat_Annees))        # Les valeurs manquantes (NA)
+sum(df$Duree_Mandat_Annees == 0, na.rm = TRUE)  # Les durées égales à 0
+sum(df$Duree_Mandat_Annees < 0, na.rm = TRUE)   # Les durées négatives
+
+# On garde uniquement les durées strictement positives (et non manquantes)
+df_propre <- subset(df, !is.na(Duree_Mandat_Annees) & Duree_Mandat_Annees > 0)
+
+# On vérifie combien de lignes il reste
+nrow(df)
+nrow(df_propre)
+
+#  On calcule le nombre et le pourcentage de chutes (1) et de censures (0)
+table(df_propre$Evenement_Chute)
+prop.table(table(df_propre$Evenement_Chute)) * 100
+```
+
+On a retiré les `r nrow(df) - nrow(df_propre)` mandats dont la durée était négative, c'est à dire inferieur à 0 car un délai en analyse de survie doit être strictement positif. Il nous reste donc `r nrow(df_propre)` mandats, avec `r round(mean(df_propre$Evenement_Chute == 1) * 100, 1)` % de chutes irrégulières et `r round(mean(df_propre$Evenement_Chute == 0) * 100, 1)` % d'observations censurées à droite
